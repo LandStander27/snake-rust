@@ -1,7 +1,6 @@
 #![allow(non_upper_case_globals)]
 
 use macroquad::prelude::*;
-use ::rand::Rng;
 
 fn window_conf() -> Conf {
 	Conf {
@@ -131,13 +130,10 @@ struct Apples {
 	rows: i32,
 	start_x: i32,
 	start_y: i32,
-	rng: ::rand::rngs::ThreadRng
 }
 
 impl Apples {
 	fn new(size: i32) -> Self {
-
-		let rng = ::rand::thread_rng();
 
 		let columns = (screen_width() / size as f32) as i32;
 		let start_x: i32 = (screen_width() % size as f32) as i32 / 2;
@@ -148,7 +144,6 @@ impl Apples {
 		return Self {
 			apples: Vec::new(),
 			apple_size: size,
-			rng: rng,
 			columns: columns,
 			rows: rows,
 			start_x: start_x,
@@ -160,8 +155,8 @@ impl Apples {
 
 		loop {
 
-			let x = self.rng.gen_range(0..=self.columns) * self.apple_size + self.start_x;
-			let y = self.rng.gen_range(0..=self.rows) * self.apple_size + self.start_y;
+			let x = rand::gen_range(0, self.columns+1) * self.apple_size + self.start_x;
+			let y = rand::gen_range(0, self.rows+1) * self.apple_size + self.start_y;
 
 			for i in &self.apples {
 				if i.x == x as f32 && i.y == y as f32 {
