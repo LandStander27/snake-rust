@@ -99,6 +99,19 @@ impl Snake {
 		return false;
 	}
 
+	fn snake_collision(&self) -> bool {
+		for i in 0..self.squares.len() {
+			for j in 0..self.squares.len() {
+				if i != j {
+					if self.squares[i].x == self.squares[j].x && self.squares[i].y == self.squares[j].y {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
 	fn grow(&mut self) {
 		let last_squares: (&Square, &Square) = (&self.squares[0], &self.squares[1]);
 		let mut offset: (i32, i32) = (1, 1);
@@ -193,42 +206,68 @@ async fn main() {
 	apples.random();
 	apples.random();
 
+	let mut game_over: bool = false;
+
 	loop {
 		clear_background(BLACK);
 
-		if is_key_pressed(KeyCode::W) {
-			direction_queue.push(Direction::Up);
-		} else if is_key_pressed(KeyCode::D) {
-			direction_queue.push(Direction::Right);
-		} else if is_key_pressed(KeyCode::A) {
-			direction_queue.push(Direction::Left);
-		} else if is_key_pressed(KeyCode::S) {
-			direction_queue.push(Direction::Down);
-		}
+		if !game_over {
+			if is_key_pressed(KeyCode::W) {
+				direction_queue.push(Direction::Up);
+			} else if is_key_pressed(KeyCode::D) {
+				direction_queue.push(Direction::Right);
+			} else if is_key_pressed(KeyCode::A) {
+				direction_queue.push(Direction::Left);
+			} else if is_key_pressed(KeyCode::S) {
+				direction_queue.push(Direction::Down);
+			}
 
-		if get_time() - snake.last_move > 0.15 {
-			if direction_queue.len() > 0 {
-				let queue = direction_queue.remove(0);
-				if match queue {
-					Direction::Up => snake.current_direction != Direction::Down,
-					Direction::Down => snake.current_direction != Direction::Up,
-					Direction::Left => snake.current_direction != Direction::Right,
-					Direction::Right => snake.current_direction != Direction::Left,
-				} {
-					snake.current_direction = queue;
+			if get_time() - snake.last_move > 0.15 {
+				if direction_queue.len() > 0 {
+					let queue = direction_queue.remove(0);
+					if match queue {
+						Direction::Up => snake.current_direction != Direction::Down,
+						Direction::Down => snake.current_direction != Direction::Up,
+						Direction::Left => snake.current_direction != Direction::Right,
+						Direction::Right => snake.current_direction != Direction::Left,
+					} {
+						snake.current_direction = queue;
+					}
+				}
+				snake.move_snake();
+			}
+	
+			for i in 0..apples.apples.len() {
+				if snake.collision(&apples.apples[i]) {
+					apples.apples.remove(i);
+					apples.random();
+					snake.grow();
+					break;
 				}
 			}
-			snake.move_snake();
+
+			if snake.snake_collision() {
+				game_over = true;
+			}
+	
+
+		} else {
+			if is_key_pressed(KeyCode::Space) {
+
+				snake = Snake::new(square_size);
+
+				apples = Apples::new(square_size as i32);
+				apples.random();
+				apples.random();
+
+				game_over = false;
+			}
+
+			let text_size = measure_text("Press space to restart", None, 32, 1.0);
+			draw_text("Press space to restart", screen_width()/2.0 - text_size.width/2.0, screen_height()/2.0 - text_size.height/2.0, 32.0, WHITE);
+			
 		}
 
-		for i in 0..apples.apples.len() {
-			if snake.collision(&apples.apples[i]) {
-				apples.apples.remove(i);
-				apples.random();
-				snake.grow();
-				break;
-			}
-		}
 
 		snake.draw();
 		apples.draw();
