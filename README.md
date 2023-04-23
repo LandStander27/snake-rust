@@ -1,4 +1,4 @@
-## ASCII art
+## Snake-rust
 - Snake made in Rust
 - Just a project getting used to making games with Rust
 - Try out the game [here](https://landstander27.github.io/snake-rust/)!
