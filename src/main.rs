@@ -1,5 +1,7 @@
 #![allow(non_upper_case_globals)]
 
+use std::process::exit;
+
 use macroquad::prelude::*;
 
 fn window_conf() -> Conf {
@@ -40,7 +42,8 @@ struct Snake {
 	squares: Vec<Square>,
 	square_size: f32,
 	last_move: f64,
-	current_direction: Direction
+	current_direction: Direction,
+	collided_squares: Vec<usize>
 }
 
 impl Snake {
@@ -64,13 +67,19 @@ impl Snake {
 			squares: snake,
 			square_size: size,
 			last_move: get_time(),
-			current_direction: Direction::Right
+			current_direction: Direction::Right,
+			collided_squares: Vec::new()
 		};
 	}
 
 	fn draw(&self) {
-		for i in &self.squares {
-			draw_rectangle(i.x, i.y, self.square_size, self.square_size, i.color);
+
+		for i in 0..self.squares.len() {
+			if self.collided_squares.contains(&i) {
+				draw_rectangle(self.squares[i].x, self.squares[i].y, self.square_size, self.square_size, ORANGE);
+			} else {
+				draw_rectangle(self.squares[i].x, self.squares[i].y, self.square_size, self.square_size, self.squares[i].color);
+			}
 		}
 	}
 
@@ -99,11 +108,12 @@ impl Snake {
 		return false;
 	}
 
-	fn snake_collision(&self) -> bool {
+	fn snake_collision(&mut self) -> bool {
 		for i in 0..self.squares.len() {
 			for j in 0..self.squares.len() {
 				if i != j {
 					if self.squares[i].x == self.squares[j].x && self.squares[i].y == self.squares[j].y {
+						self.collided_squares = Vec::from([i, j]);
 						return true;
 					}
 				}
@@ -112,9 +122,10 @@ impl Snake {
 		return false;
 	}
 
-	fn wall_collision(&self) -> bool {
-		for i in &self.squares {
-			if i.x < 0.0 || i.y < 0.0 || i.y+self.square_size > screen_height() || i.x+self.square_size > screen_width() {
+	fn wall_collision(&mut self) -> bool {
+		for i in 0..self.squares.len() {
+			if self.squares[i].x < 0.0 || self.squares[i].y < 0.0 || self.squares[i].y+self.square_size > screen_height() || self.squares[i].x+self.square_size > screen_width() {
+				self.collided_squares = Vec::from([i]);
 				return true;
 			}
 		}
@@ -202,28 +213,95 @@ impl Apples {
 
 }
 
+struct Button {
+	x: i32,
+	y: i32,
+	text: String,
+	text_size: u16,
+	padding: i32,
+	text_dimensions: TextDimensions,
+	hover: bool
+}
+
+impl Button {
+	fn new(x: i32, y: i32, label: String, text_size: u16, padding: i32) -> Self {
+		return Self {
+			x: x,
+			y: y,
+			text: label.clone(),
+			text_size: text_size,
+			padding: padding,
+			text_dimensions: measure_text(&label, None, text_size, 1.0),
+			hover: false
+		};
+	}
+
+	fn draw(&self) {
+		
+		let text_size = self.text_dimensions;
+
+		let color = match self.hover {
+			false => WHITE,
+			true => Color { r: 0.875, g: 0.875, b: 0.875, a: 1.0 }
+		};
+
+		draw_rectangle_lines(self.x as f32-self.padding as f32-text_size.width/2.0, self.y as f32 - text_size.height/2.0 as f32-self.padding as f32, text_size.width+self.padding as f32*2.0, text_size.height+self.padding as f32*2.0, 5.0, color);
+		draw_text(&self.text, self.x as f32 - text_size.width/2.0, self.y as f32 + text_size.height/2.0, self.text_size as f32, color);
+
+	}
+
+	fn is_over(&self, x: i32, y: i32) -> bool {
+		if x > self.x - self.padding - self.text_dimensions.width as i32/2 && x < self.x + self.padding + self.text_dimensions.width as i32/2 {
+			if y > self.y - self.padding - self.text_dimensions.height as i32/2 && y < self.y + self.padding + self.text_dimensions.height as i32/2 {
+				return true;
+			}
+		}
+		return false;
+	}
+
+}
+
+#[cfg(target_family = "wasm")]
+fn on_web() -> bool {
+	return true;
+}
+
+#[cfg(target_family = "windows")]
+fn on_web() -> bool {
+	return false;
+}
+
 #[macroquad::main(window_conf)]
 async fn main() {
 
-	println!("Setting up.");
+	if on_web() {
+		info!("WASM detected.");
+	}
 
-	println!("Initializing direction queue.");
+	info!("Setting up.");
+
+	info!("Initializing direction queue.");
 	let mut direction_queue: Vec<Direction> = Vec::new();
 
-	println!("Initializing snake vector");
+	info!("Initializing snake vector.");
 	let mut snake = Snake::new(square_size);
 
-	println!("Initializing apples vector");
+	info!("Initializing apples vector.");
+
 	let mut apples = Apples::new(square_size as i32);
 	apples.random();
 	apples.random();
 
 	let mut game_over: bool = false;
+	let mut in_game: bool = false;
+
+	let mut start_button = Button::new(screen_width().round() as i32/2, screen_height().round() as i32/5 * 3, "Start".to_string(), 75, 10);
+	let mut exit_button = Button::new(screen_width().round() as i32/2, screen_height().round() as i32 / 7 * 5, "Exit".to_string(), 75, 10);
 
 	loop {
 		clear_background(BLACK);
 
-		if !game_over {
+		if !game_over && in_game {
 			if is_key_pressed(KeyCode::W) {
 				direction_queue.push(Direction::Up);
 			} else if is_key_pressed(KeyCode::D) {
@@ -262,7 +340,42 @@ async fn main() {
 				game_over = true;
 			}
 
+		} else if !in_game {
 
+			if is_mouse_button_pressed(MouseButton::Left) {
+				let pos = mouse_position();
+				if start_button.is_over(pos.0 as i32, pos.1 as i32) {
+					in_game = true;
+				}
+			} else {
+				let pos = mouse_position();
+				if start_button.is_over(pos.0 as i32, pos.1 as i32) {
+					start_button.hover = true;
+				} else {
+					start_button.hover = false;
+				}
+			}
+
+			if is_mouse_button_pressed(MouseButton::Left) {
+				let pos = mouse_position();
+				if exit_button.is_over(pos.0 as i32, pos.1 as i32) {
+					info!("Requested exit.");
+					exit(0);
+				}
+			} else {
+				let pos = mouse_position();
+				if exit_button.is_over(pos.0 as i32, pos.1 as i32) {
+					exit_button.hover = true;
+				} else {
+					exit_button.hover = false;
+				}
+			}
+
+			start_button.draw();
+			if !on_web() {
+				exit_button.draw();
+			}
+			
 
 		} else {
 			if is_key_pressed(KeyCode::Space) {
@@ -274,16 +387,18 @@ async fn main() {
 				apples.random();
 
 				game_over = false;
+				in_game = false;
 			}
 
-			let text_size = measure_text("Press space to restart", None, 32, 1.0);
-			draw_text("Press space to restart", screen_width()/2.0 - text_size.width/2.0, screen_height()/2.0 - text_size.height/2.0, 32.0, WHITE);
-			
+			let text_size = measure_text("Oh no! Press space to continue", None, 32, 1.0);
+			draw_text("Oh no! Press space to continue", screen_width()/2.0 - text_size.width/2.0, screen_height()/2.0 - text_size.height/2.0, 32.0, WHITE);
+
 		}
 
-
-		snake.draw();
-		apples.draw();
+		if in_game {
+			snake.draw();
+			apples.draw();
+		}
 
 		next_frame().await
 	}
