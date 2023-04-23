@@ -156,8 +156,8 @@ impl Apples {
 
 		loop {
 
-			let x = rand::gen_range(0, self.columns+1) * self.apple_size + self.start_x;
-			let y = rand::gen_range(0, self.rows+1) * self.apple_size + self.start_y;
+			let x = rand::gen_range(0, self.columns) * self.apple_size + self.start_x;
+			let y = rand::gen_range(0, self.rows) * self.apple_size + self.start_y;
 
 			for i in &self.apples {
 				if i.x == x as f32 && i.y == y as f32 {
