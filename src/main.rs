@@ -112,6 +112,15 @@ impl Snake {
 		return false;
 	}
 
+	fn wall_collision(&self) -> bool {
+		for i in &self.squares {
+			if i.x < 0.0 || i.y < 0.0 || i.y+self.square_size > screen_height() || i.x+self.square_size > screen_width() {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	fn grow(&mut self) {
 		let last_squares: (&Square, &Square) = (&self.squares[0], &self.squares[1]);
 		let mut offset: (i32, i32) = (1, 1);
@@ -198,10 +207,13 @@ async fn main() {
 
 	println!("Setting up.");
 
+	println!("Initializing direction queue.");
 	let mut direction_queue: Vec<Direction> = Vec::new();
 
+	println!("Initializing snake vector");
 	let mut snake = Snake::new(square_size);
 
+	println!("Initializing apples vector");
 	let mut apples = Apples::new(square_size as i32);
 	apples.random();
 	apples.random();
@@ -246,10 +258,11 @@ async fn main() {
 				}
 			}
 
-			if snake.snake_collision() {
+			if snake.snake_collision() || snake.wall_collision() {
 				game_over = true;
 			}
-	
+
+
 
 		} else {
 			if is_key_pressed(KeyCode::Space) {
