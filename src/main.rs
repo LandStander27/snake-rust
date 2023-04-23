@@ -1,6 +1,7 @@
 #![allow(non_upper_case_globals)]
 
 use macroquad::prelude::*;
+use ::rand::Rng;
 
 fn window_conf() -> Conf {
 	Conf {
@@ -47,9 +48,16 @@ impl Snake {
 	fn new(size: f32) -> Self {
 
 		let mut snake: Vec<Square> = Vec::new();
-		snake.push(Square::new(screen_width()/2.0 - 8.0, screen_height()/2.0 - 8.0, GREEN));
-		snake.push(Square::new(screen_width()/2.0 - 8.0 - size, screen_height()/2.0 - 8.0, GREEN));
-		snake.push(Square::new(screen_width()/2.0 - 8.0 - size*2.0, screen_height()/2.0 - 8.0, GREEN));
+
+		let columns = (screen_width() / size as f32) as i32;
+		let start_x: i32 = (screen_width() % size as f32) as i32 / 2;
+
+		let rows = (screen_height() / size as f32) as i32;
+		let start_y: i32 = (screen_height() % size as f32) as i32 / 2;
+
+		snake.push(Square::new((start_x+columns/2) as f32*size, (start_y+rows/2) as f32*size, GREEN));
+		snake.push(Square::new((start_x+columns/2) as f32*size - size, (start_y+rows/2) as f32*size, GREEN));
+		snake.push(Square::new((start_x+columns/2) as f32*size - size*2.0, (start_y+rows/2) as f32*size, GREEN));
 		snake.reverse();
 
 		return Self {
@@ -62,7 +70,7 @@ impl Snake {
 
 	fn draw(&self) {
 		for i in &self.squares {
-			draw_rectangle(i.x, i.y, self.square_size-1.0, self.square_size-1.0, i.color);
+			draw_rectangle(i.x, i.y, self.square_size, self.square_size, i.color);
 		}
 	}
 
@@ -82,6 +90,98 @@ impl Snake {
 
 	}
 
+	fn collision(&self, col: &Square) -> bool {
+		for i in &self.squares {
+			if col.x == i.x && col.y == i.y {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	fn grow(&mut self) {
+		let last_squares: (&Square, &Square) = (&self.squares[0], &self.squares[1]);
+		let mut offset: (i32, i32) = (1, 1);
+
+		if last_squares.0.x < last_squares.1.x {
+			offset.0 = -1;
+		}
+		if last_squares.0.y < last_squares.1.y {
+			offset.1 = -1;
+		}
+		
+		if last_squares.0.x == last_squares.1.x {
+			offset.0 = 0;
+		}
+		if last_squares.0.y == last_squares.1.y {
+			offset.1 = 0;
+		}
+
+		let new: Square = Square::new(last_squares.0.x + offset.0 as f32*self.square_size, last_squares.0.y + offset.1 as f32*self.square_size, GREEN);
+		self.squares.insert(0, new);
+
+	}
+
+}
+
+struct Apples {
+	apples: Vec<Square>,
+	apple_size: i32,
+	columns: i32,
+	rows: i32,
+	start_x: i32,
+	start_y: i32,
+	rng: ::rand::rngs::ThreadRng
+}
+
+impl Apples {
+	fn new(size: i32) -> Self {
+
+		let rng = ::rand::thread_rng();
+
+		let columns = (screen_width() / size as f32) as i32;
+		let start_x: i32 = (screen_width() % size as f32) as i32 / 2;
+
+		let rows = (screen_height() / size as f32) as i32;
+		let start_y: i32 = (screen_height() % size as f32) as i32 / 2;
+
+		return Self {
+			apples: Vec::new(),
+			apple_size: size,
+			rng: rng,
+			columns: columns,
+			rows: rows,
+			start_x: start_x,
+			start_y: start_y
+		};
+	}
+
+	fn random(&mut self) {
+
+		loop {
+
+			let x = self.rng.gen_range(0..=self.columns) * self.apple_size + self.start_x;
+			let y = self.rng.gen_range(0..=self.rows) * self.apple_size + self.start_y;
+
+			for i in &self.apples {
+				if i.x == x as f32 && i.y == y as f32 {
+					continue;
+				}
+			}
+
+			self.apples.push(Square::new(x as f32, y as f32, RED));
+			break;
+
+		}
+
+	}
+
+	fn draw(&self) {
+		for i in &self.apples {
+			draw_rectangle(i.x, i.y, self.apple_size as f32, self.apple_size as f32, i.color);
+		}
+	}
+
 }
 
 #[macroquad::main(window_conf)]
@@ -92,6 +192,10 @@ async fn main() {
 	let mut direction_queue: Vec<Direction> = Vec::new();
 
 	let mut snake = Snake::new(square_size);
+
+	let mut apples = Apples::new(square_size as i32);
+	apples.random();
+	apples.random();
 
 	loop {
 		clear_background(BLACK);
@@ -121,7 +225,17 @@ async fn main() {
 			snake.move_snake();
 		}
 
+		for i in 0..apples.apples.len() {
+			if snake.collision(&apples.apples[i]) {
+				apples.apples.remove(i);
+				apples.random();
+				snake.grow();
+				break;
+			}
+		}
+
 		snake.draw();
+		apples.draw();
 
 		next_frame().await
 	}
