@@ -54,9 +54,10 @@ impl Snake {
 		let rows = (screen_height() / size as f32) as i32;
 		let start_y: i32 = (screen_height() % size as f32) as i32 / 2;
 
-		snake.push(Square::new((start_x+columns/2) as f32*size, (start_y+rows/2) as f32*size, GREEN));
-		snake.push(Square::new((start_x+columns/2) as f32*size - size, (start_y+rows/2) as f32*size, GREEN));
-		snake.push(Square::new((start_x+columns/2) as f32*size - size*2.0, (start_y+rows/2) as f32*size, GREEN));
+		snake.push(Square::new((columns/2) as f32*size + start_x as f32, (rows/2) as f32*size + start_y as f32, GREEN));
+		snake.push(Square::new((columns/2) as f32*size + start_x as f32 - size, (rows/2) as f32*size + start_y as f32, GREEN));
+		snake.push(Square::new((columns/2) as f32*size + start_x as f32 - size*2.0, (rows/2) as f32*size + start_y as f32, GREEN));
+
 		snake.reverse();
 
 		return Self {
@@ -205,7 +206,7 @@ async fn main() {
 			direction_queue.push(Direction::Down);
 		}
 
-		if get_time() - snake.last_move > 0.2 {
+		if get_time() - snake.last_move > 0.15 {
 			if direction_queue.len() > 0 {
 				let queue = direction_queue.remove(0);
 				if match queue {
