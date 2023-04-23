@@ -330,7 +330,7 @@ async fn main() {
 				}
 				snake.move_snake();
 			}
-	
+
 			for i in 0..apples.apples.len() {
 				if snake.collision(&apples.apples[i]) {
 					apples.apples.remove(i);
@@ -343,6 +343,7 @@ async fn main() {
 
 			if snake.snake_collision() || snake.wall_collision() {
 				game_over = true;
+				score = 0;
 			}
 
 		} else if !in_game {
