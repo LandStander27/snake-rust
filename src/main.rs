@@ -280,13 +280,13 @@ async fn main() {
 
 	info!("Setting up.");
 
-	info!("Initializing direction queue.");
+	// info!("Initializing direction queue.");
 	let mut direction_queue: Vec<Direction> = Vec::new();
 
-	info!("Initializing snake vector.");
+	// info!("Initializing snake vector.");
 	let mut snake = Snake::new(square_size);
 
-	info!("Initializing apples vector.");
+	// info!("Initializing apples vector.");
 
 	let mut apples = Apples::new(square_size as i32);
 	apples.random();
@@ -294,9 +294,13 @@ async fn main() {
 
 	let mut game_over: bool = false;
 	let mut in_game: bool = false;
+	let mut score: u64 = 0;
 
 	let mut start_button = Button::new(screen_width().round() as i32/2, screen_height().round() as i32/5 * 3, "Start".to_string(), 75, 10);
 	let mut exit_button = Button::new(screen_width().round() as i32/2, screen_height().round() as i32 / 7 * 5, "Exit".to_string(), 75, 10);
+
+	let menu_logo: Texture2D = Texture2D::from_file_with_format(include_bytes!("..\\menu.png"), Some(ImageFormat::Png));
+	menu_logo.set_filter(FilterMode::Nearest);
 
 	loop {
 		clear_background(BLACK);
@@ -312,7 +316,7 @@ async fn main() {
 				direction_queue.push(Direction::Down);
 			}
 
-			if get_time() - snake.last_move > 0.15 {
+			if get_time() - snake.last_move > 0.15 - 0.025 * (score as f64 / 5 as f64).floor() {
 				if direction_queue.len() > 0 {
 					let queue = direction_queue.remove(0);
 					if match queue {
@@ -332,6 +336,7 @@ async fn main() {
 					apples.apples.remove(i);
 					apples.random();
 					snake.grow();
+					score += 1;
 					break;
 				}
 			}
@@ -371,11 +376,13 @@ async fn main() {
 				}
 			}
 
+			draw_texture_ex(menu_logo, screen_width()/2.0-320.0, screen_height()/3.0-180.0, WHITE, DrawTextureParams { dest_size: Some(vec2(640.0, 360.0)), ..Default::default() });
+
 			start_button.draw();
 			if !on_web() {
 				exit_button.draw();
 			}
-			
+
 
 		} else {
 			if is_key_pressed(KeyCode::Space) {
@@ -398,6 +405,10 @@ async fn main() {
 		if in_game {
 			snake.draw();
 			apples.draw();
+
+			let text_size = measure_text(format!("Score: {}", score).as_str(), None, 64, 1.0);
+			draw_text(format!("Score: {}", score).as_str(), screen_width()/2.0 - text_size.width/2.0, text_size.height, 64.0, WHITE);
+
 		}
 
 		next_frame().await
