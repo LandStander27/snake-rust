@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 macroquad = "0.3.25"
-rand = "0.8.5"
+rand = { path="./rand" }
 
 [profile.dev.package.'*']
 opt-level = 3
