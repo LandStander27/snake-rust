@@ -316,7 +316,7 @@ async fn main() {
 				direction_queue.push(Direction::Down);
 			}
 
-			if get_time() - snake.last_move > 0.15 - 0.025 * (score as f64 / 5 as f64).floor() {
+			if get_time() - snake.last_move > if score < 50 { 0.15 - 0.01 * (score as f64 / 5 as f64).floor() } else { 0.05 } {
 				if direction_queue.len() > 0 {
 					let queue = direction_queue.remove(0);
 					if match queue {
