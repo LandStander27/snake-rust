@@ -185,7 +185,7 @@ impl Apples {
 		};
 	}
 
-	fn random(&mut self) {
+	fn random(&mut self, restrict: &Vec<Square>) {
 
 		loop {
 
@@ -195,6 +195,11 @@ impl Apples {
 			for i in &self.apples {
 				if i.x == x as f32 && i.y == y as f32 {
 					continue;
+				}
+				for j in restrict {
+					if j.x == i.x && j.y == i.y {
+						continue;
+					}
 				}
 			}
 
@@ -315,8 +320,6 @@ async fn main() {
 	loop {
 		clear_background(BLACK);
 
-		println!("{}", ease(score as f64 / 100.0));
-
 		if !game_over && in_game {
 			if is_key_pressed(KeyCode::W) {
 				direction_queue.push(Direction::Up);
@@ -346,7 +349,7 @@ async fn main() {
 			for i in 0..apples.apples.len() {
 				if snake.collision(&apples.apples[i]) {
 					apples.apples.remove(i);
-					apples.random();
+					apples.random(&snake.squares);
 					snake.grow();
 					score += 1;
 					break;
@@ -363,8 +366,6 @@ async fn main() {
 				let pos = mouse_position();
 				if start_button.is_over(pos.0 as i32, pos.1 as i32) {
 					in_game = true;
-					apples.random();
-					apples.random();
 				}
 			} else {
 				let pos = mouse_position();
@@ -404,8 +405,8 @@ async fn main() {
 				snake = Snake::new(square_size);
 
 				apples = Apples::new(square_size as i32);
-				apples.random();
-				apples.random();
+				apples.random(&snake.squares);
+				apples.random(&snake.squares);
 
 				score = 0;
 
