@@ -301,8 +301,6 @@ async fn main() {
 	// info!("Initializing apples vector.");
 
 	let mut apples = Apples::new(square_size as i32);
-	apples.random();
-	apples.random();
 
 	let mut game_over: bool = false;
 	let mut in_game: bool = false;
@@ -357,7 +355,6 @@ async fn main() {
 
 			if snake.snake_collision() || snake.wall_collision() {
 				game_over = true;
-				score = 0;
 			}
 
 		} else if !in_game {
@@ -366,6 +363,8 @@ async fn main() {
 				let pos = mouse_position();
 				if start_button.is_over(pos.0 as i32, pos.1 as i32) {
 					in_game = true;
+					apples.random();
+					apples.random();
 				}
 			} else {
 				let pos = mouse_position();
@@ -407,6 +406,8 @@ async fn main() {
 				apples = Apples::new(square_size as i32);
 				apples.random();
 				apples.random();
+
+				score = 0;
 
 				game_over = false;
 				in_game = false;
