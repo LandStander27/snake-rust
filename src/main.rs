@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals)]
 
-use std::process::exit;
+use std::{process::exit, f64::consts::PI};
 
 use macroquad::prelude::*;
 
@@ -271,6 +271,18 @@ fn on_web() -> bool {
 	return false;
 }
 
+fn ease(x: f64) -> f64 {
+	return ((x * PI) / 2.0).cos();
+}
+
+fn calculate_speed(score: u64) -> f64 {
+	let speed = 0.15 * ease(score as f64 / 100.0);
+	if speed < 0.0 {
+		return 0.0;
+	}
+	return speed;
+}
+
 #[macroquad::main(window_conf)]
 async fn main() {
 
@@ -299,11 +311,13 @@ async fn main() {
 	let mut start_button = Button::new(screen_width().round() as i32/2, screen_height().round() as i32/5 * 3, "Start".to_string(), 75, 10);
 	let mut exit_button = Button::new(screen_width().round() as i32/2, screen_height().round() as i32 / 7 * 5, "Exit".to_string(), 75, 10);
 
-	let menu_logo: Texture2D = Texture2D::from_file_with_format(include_bytes!("..\\menu.png"), Some(ImageFormat::Png));
+	let menu_logo: Texture2D = Texture2D::from_file_with_format(include_bytes!(".\\menu.png"), Some(ImageFormat::Png));
 	menu_logo.set_filter(FilterMode::Nearest);
 
 	loop {
 		clear_background(BLACK);
+
+		println!("{}", ease(score as f64 / 100.0));
 
 		if !game_over && in_game {
 			if is_key_pressed(KeyCode::W) {
@@ -316,7 +330,7 @@ async fn main() {
 				direction_queue.push(Direction::Down);
 			}
 
-			if get_time() - snake.last_move > if score < 50 { 0.15 - 0.01 * (score as f64 / 5 as f64).floor() } else { 0.05 } {
+			if get_time() - snake.last_move > calculate_speed(score) {
 				if direction_queue.len() > 0 {
 					let queue = direction_queue.remove(0);
 					if match queue {
