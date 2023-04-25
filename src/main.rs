@@ -1,8 +1,14 @@
+#![windows_subsystem = "windows"]
 #![allow(non_upper_case_globals)]
 
 use std::{process::exit, f64::consts::PI};
 
 use macroquad::prelude::*;
+
+#[link(name = "kernel32")]
+extern "system" {
+	fn AllocConsole() -> isize;
+}
 
 fn window_conf() -> Conf {
 	Conf {
@@ -293,6 +299,10 @@ async fn main() {
 
 	if on_web() {
 		info!("WASM detected.");
+	}
+
+	if cfg!(debug_assertions) {
+		unsafe { AllocConsole(); }
 	}
 
 	info!("Setting up.");
