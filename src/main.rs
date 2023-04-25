@@ -386,6 +386,8 @@ async fn main() {
 				let pos = mouse_position();
 				if start_button.is_over(pos.0 as i32, pos.1 as i32) {
 					in_game = true;
+					apples.random(&snake.squares);
+					apples.random(&snake.squares);
 				}
 			} else {
 				let pos = mouse_position();
@@ -425,8 +427,6 @@ async fn main() {
 				snake = Snake::new(square_size);
 
 				apples = Apples::new(square_size as i32);
-				apples.random(&snake.squares);
-				apples.random(&snake.squares);
 
 				score = 0;
 
