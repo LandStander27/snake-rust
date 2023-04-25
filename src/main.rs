@@ -12,9 +12,11 @@ extern "system" {
 
 fn window_conf() -> Conf {
 	Conf {
-	    window_title: "Snake".to_owned(),
-	    fullscreen: true,
-	    ..Default::default()
+		window_title: "Snake".to_owned(),
+		fullscreen: true,
+		window_resizable: false,
+		icon: Option::Some(macroquad::miniquad::conf::Icon { small: include_bytes!("icon16.rgba").to_owned(), medium: include_bytes!("icon32.rgba").to_owned(), big: include_bytes!("icon64.rgba").to_owned() }),
+		..Default::default()
 	}
 }
 
