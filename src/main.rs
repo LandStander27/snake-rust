@@ -5,9 +5,16 @@ use std::{process::exit, f64::consts::PI};
 
 use macroquad::prelude::*;
 
+#[cfg(target_family = "windows")]
 #[link(name = "kernel32")]
 extern "system" {
 	fn AllocConsole() -> isize;
+}
+
+#[allow(non_snake_case)]
+#[cfg(not(target_family = "windows"))]
+unsafe fn AllocConsole() -> isize {
+	return 0;
 }
 
 fn window_conf() -> Conf {
@@ -306,6 +313,7 @@ async fn main() {
 	if cfg!(debug_assertions) {
 		unsafe { AllocConsole(); }
 	}
+
 
 	info!("Setting up.");
 
